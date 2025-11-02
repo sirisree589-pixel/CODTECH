@@ -1,0 +1,160 @@
+<!-- task1/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz App — CODTECH</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--success:#10b981;}
+    body{margin:0;font-family:Inter,Segoe UI,Arial;background:linear-gradient(180deg,#07102a, #071627);color:#e6eef8;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    .container{width:100%;max-width:760px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:22px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    header h1{font-size:20px;margin:0}
+    header .meta{color:var(--muted);font-size:13px}
+    .question{margin-top:18px;font-size:18px}
+    .answers{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+    .answer{padding:12px;border-radius:8px;background:#081223;border:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:all .18s}
+    .answer:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    .answer.correct{outline:3px solid rgba(16,185,129,0.15);background:linear-gradient(90deg,rgba(16,185,129,0.06),transparent)}
+    .answer.wrong{outline:3px solid rgba(239,68,68,0.12);background:linear-gradient(90deg,rgba(239,68,68,0.04),transparent)}
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#07203a;font-weight:600;cursor:pointer}
+    .score{color:var(--muted);font-size:14px}
+    .footer{margin-top:16px;color:var(--muted);font-size:13px}
+    @media(min-width:720px){.answers{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <header>
+      <h1>CODTECH Quiz</h1>
+      <div class="meta">Instant feedback • 10 pts/question</div>
+    </header>
+
+    <div id="quiz">
+      <div class="question" id="qText">Loading question...</div>
+      <div class="answers" id="answers"></div>
+
+      <div class="controls">
+        <div class="score" id="score">Score: 0</div>
+        <div>
+          <button id="nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <small id="progress">0 / 0</small>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== Quiz Data (can be loaded dynamically) ======
+    const questions = [
+      {
+        id: 1,
+        q: "Which HTML element do we use for the largest heading?",
+        options: ["<head>", "<h1>", "<heading>", "<title>"],
+        answerIndex: 1
+      },
+      {
+        id: 2,
+        q: "What is the output of: console.log(typeof null) ?",
+        options: ["'null'", "'object'", "'undefined'", "'number'"],
+        answerIndex: 1
+      },
+      {
+        id: 3,
+        q: "Which CSS property controls spacing inside an element?",
+        options: ["margin", "padding", "border-spacing", "gap"],
+        answerIndex: 1
+      },
+      {
+        id: 4,
+        q: "Which tag is used for an unordered list in HTML?",
+        options: ["<ol>", "<ul>", "<li>", "<list>"],
+        answerIndex: 1
+      },
+      {
+        id: 5,
+        q: "Which operator is used to assign a value in JavaScript?",
+        options: ["==", "===", "=", ":="],
+        answerIndex: 2
+      }
+    ];
+
+    // ======= App State =======
+    let currentIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    const qText = document.getElementById('qText');
+    const answersDiv = document.getElementById('answers');
+    const scoreEl = document.getElementById('score');
+    const progress = document.getElementById('progress');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function loadQuestion(index){
+      answered = false;
+      const item = questions[index];
+      qText.textContent = item.q;
+      answersDiv.innerHTML = '';
+      item.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'answer';
+        b.innerHTML = opt;
+        b.dataset.index = i;
+        b.onclick = onAnswerClick;
+        answersDiv.appendChild(b);
+      });
+      progress.textContent = `${index+1} / ${questions.length}`;
+    }
+
+    function onAnswerClick(e){
+      if(answered) return;
+      answered = true;
+      const chosen = Number(e.currentTarget.dataset.index);
+      const correct = questions[currentIndex].answerIndex;
+      const buttons = answersDiv.querySelectorAll('.answer');
+      buttons.forEach(btn => {
+        const idx = Number(btn.dataset.index);
+        if(idx === correct) btn.classList.add('correct');
+        if(idx === chosen && idx !== correct) btn.classList.add('wrong');
+        // disable pointer
+        btn.style.pointerEvents = 'none';
+      });
+
+      if(chosen === correct){
+        score += 10;
+      }
+      scoreEl.textContent = `Score: ${score}`;
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if(!answered){
+        // allow skipping but mark none selected
+      }
+      currentIndex++;
+      if(currentIndex >= questions.length){
+        showResults();
+        return;
+      }
+      loadQuestion(currentIndex);
+    });
+
+    function showResults(){
+      answersDiv.innerHTML = '';
+      qText.innerHTML = `Quiz Complete! Final Score: ${score}`;
+      const restart = document.createElement('button');
+      restart.textContent = 'Restart Quiz';
+      restart.onclick = () => { currentIndex = 0; score = 0; scoreEl.textContent = 'Score: 0'; loadQuestion(0); };
+      answersDiv.appendChild(restart);
+      progress.textContent = `${questions.length} / ${questions.length}`;
+    }
+
+    // Init
+    loadQuestion(0);
+  </script>
+</body>
+</html>
